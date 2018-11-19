@@ -1,6 +1,6 @@
 'use strict';
 angular.module('copayApp.controllers').controller('tourController',
-  function($scope, $state, $log, $timeout, $filter, ongoingProcess, profileService, rateService, popupService, gettextCatalog) {
+  function($scope, $state, $log, $timeout, $filter, ongoingProcess, profileService, rateService, popupService, gettextCatalog, startupService, storageService, walletService, $q) {
 
     $scope.data = {
       index: 0
@@ -13,15 +13,16 @@ angular.module('copayApp.controllers').controller('tourController',
       spaceBetween: 100
     }
 
-    $scope.$on("$ionicSlides.sliderInitialized", function(event, data) {
-      $scope.slider = data.slider;
+    $scope.$on("$ionicView.afterEnter", function() {
+      startupService.ready();
     });
 
-    $scope.$on("$ionicSlides.slideChangeStart", function(event, data) {
-      $scope.data.index = data.slider.activeIndex;
-    });
-
-    $scope.$on("$ionicSlides.slideChangeEnd", function(event, data) {});
+    $scope.createProfile = function() {
+      $log.debug('Creating profile');
+      profileService.createProfile(function(err) {
+        if (err) $log.warn(err);
+      });
+    };
 
     $scope.$on("$ionicView.enter", function(event, data) {
       rateService.whenAvailable(function() {
@@ -37,7 +38,11 @@ angular.module('copayApp.controllers').controller('tourController',
     });
 
     var retryCount = 0;
+    var creatingWallet = false;
     $scope.createDefaultWallet = function() {
+      if (creatingWallet) return;
+
+      creatingWallet = true;
       ongoingProcess.set('creatingWallet', true);
       $timeout(function() {
         profileService.createDefaultWallet(function(err, walletClients) {
@@ -59,28 +64,43 @@ angular.module('copayApp.controllers').controller('tourController',
               }
             }, 2000);
           };
+
           ongoingProcess.set('creatingWallet', false);
           var bchWallet = walletClients[0];
           var btcWallet = walletClients[1];
-
           var bchWalletId = bchWallet.credentials.walletId;
           var btcWalletId = btcWallet.credentials.walletId;
 
-          $state.go('onboarding.collectEmail', {
-            bchWalletId: bchWalletId,
-            btcWalletId: btcWalletId
+          function createAddressPromise(wallet) {
+            return $q(function(resolve, reject) {
+              walletService.getAddress(wallet, true, function(e, addr) {
+                if (e) reject(e);
+                resolve(addr);
+              });
+            });
+          }
+
+          function goToCollectEmail() {
+            $state.go('onboarding.collectEmail', {
+              bchWalletId: bchWalletId,
+              btcWalletId: btcWalletId
+            });
+          }
+
+          var bchAddressPromise = createAddressPromise(bchWallet);
+          var btcAddressPromise = createAddressPromise(btcWallet);
+          ongoingProcess.set('generatingNewAddress', true);
+
+          $q.all([bchAddressPromise, btcAddressPromise]).then(function(addresses) {
+            ongoingProcess.set('generatingNewAddress', false);
+            goToCollectEmail();
+          }, function(e) {
+            ongoingProcess.set('generatingNewAddress', false);
+            $log.warn(e);
+            popupService.showAlert(gettextCatalog.getString('Error'), e);
+            goToCollectEmail();
           });
         });
       }, 300);
     };
-
-    $scope.goBack = function() {
-      if ($scope.data.index != 0) $scope.slider.slidePrev();
-      else $state.go('onboarding.welcome');
-    }
-
-    $scope.slideNext = function() {
-      if ($scope.data.index != 2) $scope.slider.slideNext();
-      else $state.go('onboarding.welcome');
-    }
   });

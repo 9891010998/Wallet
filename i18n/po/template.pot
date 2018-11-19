@@ -1568,7 +1568,7 @@ msgstr ""
 #: src/js/controllers/confirm.js:114
 #: src/js/controllers/confirm.js:306
 #: src/js/services/bwcError.js:44
-msgid "Insufficient funds"
+msgid "Insufficient confirmed funds"
 msgstr ""
 
 #: src/js/controllers/topup.js:165
@@ -2035,7 +2035,7 @@ msgstr ""
 
 #: src/js/controllers/bitpayCard.js:123
 #: src/js/controllers/tx-details.js:192
-msgid "Open Insight"
+msgid "Open Explorer"
 msgstr ""
 
 #: www/views/tab-scan.html:22
@@ -3182,7 +3182,7 @@ msgstr ""
 
 #: src/js/controllers/bitpayCard.js:122
 #: src/js/controllers/tx-details.js:191
-msgid "View Transaction on Insight"
+msgid "View Transaction on Explorer.Bitcoin.com"
 msgstr ""
 
 #: src/js/controllers/tab-home.js:148

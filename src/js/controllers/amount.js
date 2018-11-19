@@ -37,6 +37,10 @@ angular.module('copayApp.controllers').controller('amountController', function($
       $scope.fromWalletId = data.stateParams.fromWalletId;
     }
 
+    if (data.stateParams.noPrefix) {
+      $scope.showWarningMessage = data.stateParams.noPrefix != 0;
+    }
+
     var config = configService.getSync().wallet.settings;
 
     function setAvailableUnits() {
@@ -115,10 +119,11 @@ angular.module('copayApp.controllers').controller('amountController', function($
         fixedUnit = true;
       }
 
-      if (availableUnits.length == 2) {
-        unitIndex = 1;
-        altUnitIndex = 0;
-      }
+      unitIndex = lodash.findIndex(availableUnits, {
+        isFiat: true
+      });
+
+      altUnitIndex = 0;
     };
 
     // Go to...
@@ -242,13 +247,13 @@ angular.module('copayApp.controllers').controller('amountController', function($
 
     if (fixedUnit) return;
 
-    unitIndex++;
-    if (unitIndex >= availableUnits.length) unitIndex = 0;
-
+    if (!(availableUnits[unitIndex].isFiat && availableUnits.length > 2 && altUnitIndex == 0)) {
+      unitIndex++;
+      if (unitIndex >= availableUnits.length) unitIndex = 0;
+    }
 
     if (availableUnits[unitIndex].isFiat) {
-      // Always return to BTC... TODO?
-      altUnitIndex = 0;
+      altUnitIndex = altUnitIndex == 0 && availableUnits.length > 2 ? 1 : 0;
     } else {
       altUnitIndex = lodash.findIndex(availableUnits, {
         isFiat: true
@@ -393,67 +398,81 @@ angular.module('copayApp.controllers').controller('amountController', function($
 
   $scope.finish = function() {
 
-    var unit = availableUnits[unitIndex];
-    var _amount = evaluate(format($scope.amountModel.amount));
-    var coin = unit.id;
-    if (unit.isFiat) {
-      coin = availableUnits[altUnitIndex].id;
-    }
-
-    if ($scope.nextStep) {
-      $state.transitionTo($scope.nextStep, {
-        id: _id,
-        amount: $scope.useSendMax ? null : _amount,
-        currency: unit.id.toUpperCase(),
-        coin: coin,
-        useSendMax: $scope.useSendMax
-      });
-    } else {
-      var amount = _amount;
-
+    function finish() {
+      var unit = availableUnits[unitIndex];
+      var _amount = evaluate(format($scope.amountModel.amount));
+      var coin = unit.id;
       if (unit.isFiat) {
-        amount = (fromFiat(amount) * unitToSatoshi).toFixed(0);
-      } else {
-        amount = (amount * unitToSatoshi).toFixed(0);
+        coin = availableUnits[altUnitIndex].id;
       }
 
-      var confirmData = {
-        recipientType: $scope.recipientType,
-        toAmount: amount,
-        toAddress: $scope.toAddress,
-        displayAddress: $scope.displayAddress || $scope.toAddress,
-        toName: $scope.toName,
-        toEmail: $scope.toEmail,
-        toColor: $scope.toColor,
-        coin: coin,
-        useSendMax: $scope.useSendMax,
-      };
+      if ($scope.nextStep) {
+        $state.transitionTo($scope.nextStep, {
+          id: _id,
+          amount: $scope.useSendMax ? null : _amount,
+          currency: unit.id.toUpperCase(),
+          coin: coin,
+          useSendMax: $scope.useSendMax
+        });
+      } else {
+        var amount = _amount;
 
-      if ($scope.shapeshiftOrderId) {
-        var shapeshiftOrderUrl = 'https://www.shapeshift.io/#/status/';
-        shapeshiftOrderUrl += $scope.shapeshiftOrderId;
-        confirmData.description = shapeshiftOrderUrl;
-        confirmData.fromWalletId = $scope.fromWalletId;
+        if (unit.isFiat) {
+          amount = (fromFiat(amount) * unitToSatoshi).toFixed(0);
+        } else {
+          amount = (amount * unitToSatoshi).toFixed(0);
+        }
 
-        if (confirmData.useSendMax) {
-          var wallet = lodash.find(profileService.getWallets({ coin: coin }),
-            function(w) {
-              return w.id == $scope.fromWalletId;
-            });
+        var confirmData = {
+          recipientType: $scope.recipientType,
+          toAmount: amount,
+          toAddress: $scope.toAddress,
+          displayAddress: $scope.displayAddress || $scope.toAddress,
+          toName: $scope.toName,
+          toEmail: $scope.toEmail,
+          toColor: $scope.toColor,
+          coin: coin,
+          useSendMax: $scope.useSendMax,
+        };
 
-          var balance = parseFloat(wallet.cachedBalance.substring(0, wallet.cachedBalance.length-4));
-          if (balance < $scope.minShapeshiftAmount * 1.04) {
-            confirmData.useSendMax = false;
-            confirmData.toAmount = $scope.minShapeshiftAmount * unitToSatoshi;
-          } else if (balance > $scope.maxShapeshiftAmount) {
-            confirmData.useSendMax = false;
-            confirmData.toAmount = $scope.maxShapeshiftAmount * unitToSatoshi * 0.99;
+        if ($scope.shapeshiftOrderId) {
+          var shapeshiftOrderUrl = 'https://www.shapeshift.io/#/status/';
+          shapeshiftOrderUrl += $scope.shapeshiftOrderId;
+          confirmData.description = shapeshiftOrderUrl;
+          confirmData.fromWalletId = $scope.fromWalletId;
+
+          if (confirmData.useSendMax) {
+            var wallet = lodash.find(profileService.getWallets({ coin: coin }),
+              function(w) {
+                return w.id == $scope.fromWalletId;
+              });
+
+            var balance = parseFloat(wallet.cachedBalance.substring(0, wallet.cachedBalance.length-4));
+            if (balance < $scope.minShapeshiftAmount * 1.04) {
+              confirmData.useSendMax = false;
+              confirmData.toAmount = $scope.minShapeshiftAmount * unitToSatoshi;
+            } else if (balance > $scope.maxShapeshiftAmount) {
+              confirmData.useSendMax = false;
+              confirmData.toAmount = $scope.maxShapeshiftAmount * unitToSatoshi * 0.99;
+            }
           }
         }
-      }
 
-      $state.transitionTo('tabs.send.confirm', confirmData);
+        $state.transitionTo('tabs.send.confirm', confirmData);
+      }
+      $scope.useSendMax = null;
     }
-    $scope.useSendMax = null;
+
+    if ($scope.showWarningMessage) {
+      var u = $scope.unit == 'BCH' || $scope.unit == 'BTC' ? $scope.unit : $scope.alternativeUnit;
+      var message = 'Are you sure you want to send ' + u.toUpperCase()  + '?';
+      popupService.showConfirm(message, '', 'Yes', 'No', function(res) {
+        if (!res) return;
+        finish();
+      });
+    } else {
+      finish();
+    }
+
   };
 });

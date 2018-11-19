@@ -16,18 +16,32 @@ angular.module('copayApp.services').factory('bitcoincomService', function($http,
     credentials.BITPAY_API_URL = "https://bitpay.com";
   };
 
-  var homeItem = {
-    name: 'bitcoincom',
-    title: 'Explore Bitcoin.com',
-    icon: 'icon-bitcoincom',
-    sref: 'tabs.bitcoin-com',
+  var cashGamesItem = {
+    name: 'games',
+    title: 'Bitcoin Cash Games',
+    icon: 'icon-games',
+    href: 'http://cashgames.bitcoin.com'
   };
 
-  var nextStepItem = {
-    name: 'bitcoincom',
-    title: 'Explore Bitcoin.com',
-    icon: 'icon-bitcoincom',
-    sref: 'tabs.bitcoin-com',
+  var newsItem = {
+    name: 'news',
+    title: 'News',
+    icon: 'icon-news',
+    href: 'http://news.bitcoin.com'
+  };
+
+  var poolItem = {
+    name: 'pool',
+    title: 'Mining Pool',
+    icon: 'icon-mining',
+    href: 'http://pool.bitcoin.com'
+  };
+
+  var toolsItem = {
+    name: 'tools',
+    title: 'Tools',
+    icon: 'icon-tools',
+    href: 'http://tools.bitcoin.com'
   };
 
   var _getBitPay = function(endpoint) {
@@ -56,7 +70,10 @@ angular.module('copayApp.services').factory('bitcoincomService', function($http,
   };
 
   var register = function() {
-        nextStepsService.register(nextStepItem);
+    nextStepsService.register(cashGamesItem);
+    nextStepsService.register(newsItem);
+    nextStepsService.register(poolItem);
+    nextStepsService.register(toolsItem);
   };
 
   register();

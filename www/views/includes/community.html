@@ -1,6 +1,6 @@
-<div ng-controller="nextStepsController">
+<div ng-controller="communityController">
   <div class="item item-icon-right item-heading" ng-click="toggle()" >
-    <span translate>Explore Bitcoin.com</span>
+    <span translate>Community</span>
     <i class="icon bp-arrow-up" ng-show="!hide"></i>
     <i class="icon bp-arrow-down" ng-show="hide"></i>
   </div>
@@ -18,6 +18,16 @@
           <div class="bg {{service.icon}}"></div>
         </i>
         <span>{{service.title ||  service.name}}</span>
+        <i class="icon bp-arrow-right"></i>
+      </a>
+
+    </div>
+    <div>
+      <a ng-click="share()" class="item item-sub item-icon-left item-big-icon-left item-icon-right next-step">
+        <i class="icon big-icon-svg">
+          <div class="bg icon-share"></div>
+        </i>
+        <span>Share the Wallet App</span>
         <i class="icon bp-arrow-right"></i>
       </a>
     </div>

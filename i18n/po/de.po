@@ -1577,7 +1577,7 @@ msgstr ""
 #: src/js/controllers/confirm.js:114
 #: src/js/controllers/confirm.js:306
 #: src/js/services/bwcError.js:44
-msgid "Insufficient funds"
+msgid "Insufficient confirmed funds"
 msgstr "Nicht ausreichendes Guthaben"
 
 #: src/js/controllers/topup.js:165
@@ -2044,7 +2044,7 @@ msgstr "Öffne GitHub Projekt"
 
 #: src/js/controllers/bitpayCard.js:123
 #: src/js/controllers/tx-details.js:192
-msgid "Open Insight"
+msgid "Open Explorer"
 msgstr "Öffne Insight"
 
 #: www/views/tab-scan.html:22
@@ -3191,7 +3191,7 @@ msgstr "Nutzungsbedingungen anzeigen"
 
 #: src/js/controllers/bitpayCard.js:122
 #: src/js/controllers/tx-details.js:191
-msgid "View Transaction on Insight"
+msgid "View Transaction on Explorer.Bitcoin.com"
 msgstr "Transaktionen auf Insight anzeigen"
 
 #: src/js/controllers/tab-home.js:148

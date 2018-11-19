@@ -117,18 +117,29 @@ angular.module('copayApp.controllers').controller('txDetailsController', functio
       }
 
       $scope.btx = txFormatService.processTx($scope.wallet.coin, tx);
+      $scope.addressDisplayType = 'legacy';
 
       var cashaddrDate = new Date(2018, 0, 15);
       var txDate = new Date(($scope.btx.createdOn || $scope.btx.time) * 1000);
 
       if ($scope.wallet.coin == 'bch' && txDate >= cashaddrDate) {
-        var bchAddresses = bitcoinCashJsService.translateAddresses($scope.btx.addressTo);
-        $scope.btx.displayAddress = bchAddresses.cashaddr;
-        $scope.btx.copyAddress = 'bitcoincash:' + $scope.btx.displayAddress;
-      } else {
-        $scope.btx.displayAddress = $scope.btx.addressTo;
-        $scope.btx.copyAddress = $scope.btx.displayAddress;
+        if ($scope.btx.action === 'sent') {
+          var bchAddresses = bitcoinCashJsService.translateAddresses($scope.btx.addressTo);
+          $scope.btx.cashAddr = bchAddresses.cashaddr;
+          $scope.btx.cashCopyAddr = 'bitcoincash:' + $scope.btx.cashAddr;
+        } else {
+          lodash.each($scope.btx.outputs, function(o) {
+            var bchAddresses = bitcoinCashJsService.translateAddresses(o.address);
+            o.cashAddr = bchAddresses.cashaddr;
+          });
+        }
+
+        $scope.canToggleAddressType = true;
+        $scope.addressDisplayType = 'cashAddr';
       }
+
+      $scope.btx.displayAddress = $scope.btx.addressTo;
+      $scope.btx.copyAddress = $scope.btx.displayAddress;
 
       txFormatService.formatAlternativeStr($scope.wallet.coin, tx.fees, function(v) {
         $scope.btx.feeFiatStr = v;
@@ -167,41 +178,33 @@ angular.module('copayApp.controllers').controller('txDetailsController', functio
 
   var updateTxDebounced = lodash.debounce(updateTx, 5000);
 
-  $scope.showCommentPopup = function() {
-    var opts = {};
-    if ($scope.btx.message) {
-      opts.defaultText = $scope.btx.message;
-    }
-    if ($scope.btx.note && $scope.btx.note.body) opts.defaultText = $scope.btx.note.body;
+  $scope.updateNote = function(text) {
+    if (typeof text == "undefined") return;
+    $scope.btx.note = {
+      body: text
+    };
 
-    popupService.showPrompt($scope.wallet.name, gettextCatalog.getString('Memo'), opts, function(text) {
-      if (typeof text == "undefined") return;
+    $log.debug('Saving memo');
 
-      $scope.btx.note = {
-        body: text
-      };
-      $log.debug('Saving memo');
+    var args = {
+      txid: $scope.btx.txid,
+      body: text
+    };
 
-      var args = {
-        txid: $scope.btx.txid,
-        body: text
-      };
-
-      walletService.editTxNote($scope.wallet, args, function(err, res) {
-        if (err) {
-          $log.debug('Could not save tx comment ' + err);
-        }
-      });
+    walletService.editTxNote($scope.wallet, args, function(err, res) {
+      if (err) {
+        $log.debug('Could not save tx comment ' + err);
+      }
     });
-  };
+  }
 
   $scope.viewOnBlockchain = function() {
     var btx = $scope.btx;
     var url = 'https://' + ($scope.getShortNetworkName() == 'test' ? 'test-' : '') + blockexplorerUrl + '/tx/' + btx.txid;
     var optIn = true;
     var title = null;
-    var message = gettextCatalog.getString('View Transaction on Insight');
-    var okText = gettextCatalog.getString('Open Insight');
+    var message = gettextCatalog.getString('View Transaction on Explorer.Bitcoin.com');
+    var okText = gettextCatalog.getString('Open Explorer');
     var cancelText = gettextCatalog.getString('Go Back');
     externalLinkService.open(url, optIn, title, message, okText, cancelText);
   };
@@ -237,5 +240,9 @@ angular.module('copayApp.controllers').controller('txDetailsController', functio
       txConfirmNotification.unsubscribe($scope.wallet, txId);
     }
   };
+
+  $scope.displayAddress = function(type) {
+    $scope.addressDisplayType = type;
+  }
 
 });

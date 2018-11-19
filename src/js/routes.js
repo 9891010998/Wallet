@@ -287,7 +287,7 @@ angular.module('copayApp').config(function(historicLogProvider, $provide, $logPr
        */
 
       .state('tabs.send.amount', {
-        url: '/amount/:recipientType/:toAddress/:toName/:toEmail/:toColor/:coin/:fixedUnit/:fromWalletId/:minShapeshiftAmount/:maxShapeshiftAmount/:shapeshiftOrderId/:displayAddress',
+        url: '/amount/:recipientType/:toAddress/:toName/:toEmail/:toColor/:coin/:fixedUnit/:fromWalletId/:minShapeshiftAmount/:maxShapeshiftAmount/:shapeshiftOrderId/:displayAddress/:noPrefix',
         views: {
           'tab-send@tabs': {
             controller: 'amountController',
@@ -755,15 +755,6 @@ angular.module('copayApp').config(function(historicLogProvider, $provide, $logPr
         abstract: true,
         template: '<ion-nav-view name="onboarding"></ion-nav-view>'
       })
-      .state('onboarding.welcome', {
-        url: '/welcome',
-        views: {
-          'onboarding': {
-            templateUrl: 'views/onboarding/welcome.html',
-            controller: 'welcomeController'
-          }
-        }
-      })
       .state('onboarding.tour', {
         url: '/tour',
         views: {
@@ -779,51 +770,6 @@ angular.module('copayApp').config(function(historicLogProvider, $provide, $logPr
           'onboarding': {
             templateUrl: 'views/onboarding/collectEmail.html',
             controller: 'collectEmailController'
-          }
-        }
-      })
-      .state('onboarding.backupRequest', {
-        url: '/backupRequest/:bchWalletId/:btcWalletId',
-        views: {
-          'onboarding': {
-            templateUrl: 'views/onboarding/backupRequest.html',
-            controller: 'backupRequestController'
-          }
-        }
-      })
-      .state('onboarding.backupWarning', {
-        url: '/backupWarning/:from/:walletId/:bchWalletId/:btcWalletId',
-        views: {
-          'onboarding': {
-            templateUrl: 'views/backupWarning.html',
-            controller: 'backupWarningController'
-          }
-        }
-      })
-      .state('onboarding.backup', {
-        url: '/backup/:walletId/:bchWalletId/:btcWalletId',
-        views: {
-          'onboarding': {
-            templateUrl: 'views/backup.html',
-            controller: 'backupController'
-          }
-        }
-      })
-      .state('onboarding.disclaimer', {
-        url: '/disclaimer/:bchWalletId/:btcWalletId/:backedUp/:resume',
-        views: {
-          'onboarding': {
-            templateUrl: 'views/onboarding/disclaimer.html',
-            controller: 'disclaimerController'
-          }
-        }
-      })
-      .state('onboarding.terms', {
-        url: '/terms',
-        views: {
-          'onboarding': {
-            templateUrl: 'views/onboarding/terms.html',
-            controller: 'termsController'
           }
         }
       })
@@ -1035,17 +981,6 @@ angular.module('copayApp').config(function(historicLogProvider, $provide, $logPr
       .state('tabs.giftcards', {
         url: '/giftcards',
         abstract: true
-      })
-
-      /* Explore Bitcoin.com */
-      .state('tabs.bitcoin-com', {
-        url: '/bitcoincom',
-        views: {
-          'tab-home@tabs': {
-            controller: 'bitcoincomController',
-            templateUrl: 'views/bitcoincom.html'
-          }
-        }
       })
 
       /* buy.Bitcoin.com */
@@ -1273,14 +1208,10 @@ angular.module('copayApp').config(function(historicLogProvider, $provide, $logPr
         var fromTabs = matchHome | matchReceive | matchScan | matchSend | matchSettings;
 
         //onboarding with no back views
-        var matchWelcome = $ionicHistory.currentStateName() == 'onboarding.welcome' ? true : false;
         var matchCollectEmail = $ionicHistory.currentStateName() == 'onboarding.collectEmail' ? true : false;
-        var matchBackupRequest = $ionicHistory.currentStateName() == 'onboarding.backupRequest' ? true : false;
-        var backedUp = $ionicHistory.backView().stateName == 'onboarding.backup' ? true : false;
         var noBackView = $ionicHistory.backView().stateName == 'starting' ? true : false;
-        var matchDisclaimer = $ionicHistory.currentStateName() == 'onboarding.disclaimer' && (backedUp || noBackView) ? true : false;
 
-        var fromOnboarding = matchCollectEmail | matchBackupRequest | matchWelcome | matchDisclaimer;
+        var fromOnboarding = matchCollectEmail ;
 
         //views with disable backbutton
         var matchComplete = $ionicHistory.currentStateName() == 'tabs.rate.complete' ? true : false;
@@ -1325,11 +1256,11 @@ angular.module('copayApp').config(function(historicLogProvider, $provide, $logPr
         if (err) {
           if (err.message && err.message.match('NOPROFILE')) {
             $log.debug('No profile... redirecting');
-            $state.go('onboarding.welcome');
+            $state.go('onboarding.tour');
           } else if (err.message && err.message.match('NONAGREEDDISCLAIMER')) {
             if (lodash.isEmpty(profileService.getWallets())) {
               $log.debug('No wallets and no disclaimer... redirecting');
-              $state.go('onboarding.welcome');
+              $state.go('onboarding.tour');
             } else {
               $log.debug('Display disclaimer... redirecting');
               $state.go('onboarding.disclaimer', {
